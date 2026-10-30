@@ -3,7 +3,7 @@ const graphemes = (s) => Array.from(segmenter.segment(s), (x) => x.segment);
 
 const HAN = /^\p{Script=Han}$/u;
 const LETTER = /^[a-zA-Z]$/;
-const PUNCTUATION = /^[,.;:!?，。；：！？、]$/;
+const PUNCTUATION = /^[,.;:!?，。；：！？、…—”’）》)"]$/;
 const SIGMA = 0.35;
 const THINK_CHANCE = 0.02;
 
@@ -62,6 +62,12 @@ function toUnits(text, rng) {
 
 function canMistake(unit) {
   return LETTER.test(unit) || graphemes(unit).some((c) => HOMOPHONES[c]);
+}
+
+// 一次退格删除的内容因字符而异（组合符删一个码点，emoji 序列整体删除），
+// 所以改正范围只包含单码点字符
+function canBackspaceOver(unit) {
+  return graphemes(unit).every((c) => Array.from(c).length === 1);
 }
 
 function makeMistake(units, i, rng) {
@@ -124,10 +130,11 @@ function planRun(text, writer, options, rng) {
         wrongCount += graphemes(value).length;
       }
       let j = i + consumed;
-      const extra = Math.floor(rng() * 4);
-      for (let n = 0; n < extra && j < units.length; n += 1) {
+      let extra = Math.floor(rng() * 4);
+      while (j < units.length && canBackspaceOver(units[j]) && graphemes(units[j]).length <= extra) {
         writer.type(units[j]);
         wrongCount += graphemes(units[j]).length;
+        extra -= graphemes(units[j]).length;
         j += 1;
       }
       writer.wait(300 + rng() * 500);
@@ -142,7 +149,7 @@ function planRun(text, writer, options, rng) {
 }
 
 export function textToDoc(text) {
-  const lines = text.replace(/\r\n/g, '\n').split('\n');
+  const lines = text.replace(/\r\n?/g, '\n').split('\n');
   return { paragraphs: lines.map((line) => ({ runs: [{ text: line }] })) };
 }
 

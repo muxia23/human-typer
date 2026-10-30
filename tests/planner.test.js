@@ -14,8 +14,45 @@ function simulate(actions) {
   return buffer.join('');
 }
 
+function maxBackspaceRun(actions) {
+  let max = 0;
+  let current = 0;
+  for (const action of actions) {
+    if (action.type === 'wait') continue;
+    current = action.type === 'key' ? current + 1 : 0;
+    max = Math.max(max, current);
+  }
+  return max;
+}
+
 const DEFAULTS = { wpm: 60, errorRate: 0.03, pauseStrength: 1, seed: 1 };
 const mixed = 'Hello, world!\n今天在公司做演示，效果很好。\n\nEmoji 👨‍👩‍👧 ok';
+
+test('打错后多打不超过 3 个字符', () => {
+  const han = '今天在公司做演示效果很好他在工作'.repeat(20);
+  const latin = 'the quick brown fox '.repeat(20);
+  for (let seed = 0; seed < 100; seed += 1) {
+    const options = { ...DEFAULTS, errorRate: 0.3, seed };
+    assert.ok(maxBackspaceRun(plan(textToDoc(han), options)) <= 7);
+    assert.ok(maxBackspaceRun(plan(textToDoc(latin), options)) <= 5);
+  }
+});
+
+test('退格只作用于单码点字符，组合字符不进入改正范围', () => {
+  const text = 'ab café de xกำ y 👨‍👩‍👧 z';
+  for (let seed = 0; seed < 300; seed += 1) {
+    const buffer = [];
+    for (const action of plan(textToDoc(text), { ...DEFAULTS, errorRate: 0.5, seed })) {
+      if (action.type === 'text') buffer.push(...action.value);
+      if (action.type === 'key') buffer.pop();
+    }
+    assert.equal(buffer.join(''), text);
+  }
+});
+
+test('textToDoc 把单独的回车也视为换行', () => {
+  assert.equal(textToDoc('a\rb').paragraphs.length, 2);
+});
 
 test('textToDoc 按换行拆分段落，每段一个无样式片段', () => {
   assert.deepEqual(textToDoc('a\r\nb'), {
