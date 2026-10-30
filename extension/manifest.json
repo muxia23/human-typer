@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Human Typer",
+  "version": "0.1.0",
+  "description": "以接近真人的节奏输入文本，用于演示和录屏。",
+  "permissions": [
+    "nativeMessaging",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArstvnWsUSGDfs2vqhEILYs9bvpzCbMp0dBRU/H6kN7VPyy18UpQd3ORsT6Rp8+CWoE2rVkfXIjIJFhDu8SCugIkG33BUoha++UVVW/4joJeHSkxrrpmcD+vDT28WI31P736GYzlaZ0nDqLKFOUZ0lOFIZBgKxmAtR0SDjaPDWVwGMVDjA1U6euTkw5ZzkKwImCp5SCDmv+TrUdIA5k0Qfs83VBc5X684jCO1pqjBLd638JYn8MsRhgVRB29HcQmtH8tC9WKvANZIU4WmtAYX3k0PHkA8O6WoNAae40SIbUw8xV11f85dH4ffJXeHPhF+rUPg/W5Ju+R7O2ktJlMvTwIDAQAB"
+}
