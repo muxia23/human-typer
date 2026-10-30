@@ -6,9 +6,9 @@ const STATUS_TEXT = {
   done: '已完成。',
 };
 const REASON_TEXT = {
-  app_switched: '已停止：前台应用发生变化。',
-  user_input: '已停止：检测到键盘或鼠标操作。',
-  user_cancel: '已取消。',
+  app_switched: '已停止：前台应用发生变化。点继续后，5 秒内把光标放回原位。',
+  user_input: '已停止：检测到键盘或鼠标操作。点继续后，5 秒内把光标放回原位。',
+  user_cancel: '已取消。点继续后，5 秒内把光标放回原位。',
 };
 const ERROR_TEXT = {
   no_accessibility_permission: '缺少权限：请在系统设置的“辅助功能”中允许后重试。',
@@ -25,6 +25,7 @@ function renderStatus(status) {
   const running = status.state === 'running';
   $('start').disabled = running;
   $('cancel').disabled = !running;
+  $('resume').disabled = !status.resumable;
 }
 
 function renderValues() {
@@ -73,6 +74,10 @@ $('start').addEventListener('click', () => {
       pauseStrength: Number($('pause').value),
     },
   });
+});
+
+$('resume').addEventListener('click', () => {
+  chrome.runtime.sendMessage({ type: 'resume' });
 });
 
 $('cancel').addEventListener('click', () => {

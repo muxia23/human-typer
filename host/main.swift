@@ -102,10 +102,11 @@ let reader = Thread {
 }
 reader.start()
 
-switch runTyping(startCommand, env: environment) {
+var completed = 0
+switch runTyping(startCommand, env: environment, onProgress: { completed = $0 }) {
 case .done:
     send(["event": "done"])
 case .stopped(let reason):
-    send(["event": "stopped", "reason": reason.rawValue])
+    send(["event": "stopped", "reason": reason.rawValue, "completed": completed])
 }
 exit(0)

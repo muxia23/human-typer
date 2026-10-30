@@ -109,6 +109,18 @@ do {
 }
 do {
     let env = FakeEnvironment()
+    env.hooks[2] = { $0.front = 2 }
+    var completed = 0
+    check(runTyping(command, env: env, onProgress: { completed = $0 }) == .stopped(.appSwitched), "中断时报告停止")
+    check(completed == 3, "中断时报告已完成的动作数")
+
+    let resumed = FakeEnvironment()
+    let rest = StartCommand(startDelayMs: 0, actions: Array(command.actions[completed...]))
+    check(runTyping(rest, env: resumed) == .done, "从中断处继续能完成")
+    check(env.log + resumed.log == ["text:a", "text:b", "backspace", "text:c"], "中断继续后动作不重复也不遗漏")
+}
+do {
+    let env = FakeEnvironment()
     env.overshootMs = 5
     let waits = StartCommand(startDelayMs: 0, actions: Array(repeating: .wait(20), count: 50))
     check(runTyping(waits, env: env) == .done, "睡眠超时时仍能完成")

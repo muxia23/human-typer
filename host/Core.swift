@@ -132,7 +132,11 @@ private func readExactly(_ handle: FileHandle, count: Int) -> Data? {
 
 private let sliceMs = 20
 
-func runTyping(_ command: StartCommand, env: TypingEnvironment) -> RunResult {
+func runTyping(
+    _ command: StartCommand,
+    env: TypingEnvironment,
+    onProgress: (Int) -> Void = { _ in }
+) -> RunResult {
     func sleepSlice(until deadline: Double) {
         let remaining = Int(((deadline - env.now()) * 1000).rounded(.up))
         env.sleep(ms: min(sliceMs, remaining))
@@ -157,7 +161,7 @@ func runTyping(_ command: StartCommand, env: TypingEnvironment) -> RunResult {
         return nil
     }
 
-    for action in command.actions {
+    for (index, action) in command.actions.enumerated() {
         if let reason = stopReason() { return .stopped(reason) }
         switch action {
         case .text(let value):
@@ -171,6 +175,7 @@ func runTyping(_ command: StartCommand, env: TypingEnvironment) -> RunResult {
                 if let reason = stopReason() { return .stopped(reason) }
             }
         }
+        onProgress(index + 1)
     }
     return .done
 }
