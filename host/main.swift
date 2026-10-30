@@ -32,7 +32,8 @@ final class SystemEnvironment: TypingEnvironment {
                 let units = Array(text.utf16)
                 event.keyboardSetUnicodeString(stringLength: units.count, unicodeString: units)
             }
-            event.post(tap: .cghidEventTap)
+            // 发到会话层，避免自身按键刷新 hidSystemState 的计时
+            event.post(tap: .cgSessionEventTap)
         }
     }
 
