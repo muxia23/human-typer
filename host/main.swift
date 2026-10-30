@@ -55,7 +55,16 @@ final class SystemEnvironment: TypingEnvironment {
     }
 
     func frontmostPID() -> Int32? {
-        NSWorkspace.shared.frontmostApplication?.processIdentifier
+        // NSWorkspace 的结果更新有延迟，切换应用后可能漏发按键，优先同步查询
+        let system = AXUIElementCreateSystemWide()
+        var focused: CFTypeRef?
+        var pid: pid_t = 0
+        if AXUIElementCopyAttributeValue(system, kAXFocusedApplicationAttribute as CFString, &focused) == .success,
+           let focused,
+           AXUIElementGetPid(focused as! AXUIElement, &pid) == .success {
+            return pid
+        }
+        return NSWorkspace.shared.frontmostApplication?.processIdentifier
     }
 
     func secondsSinceUserInput() -> Double {
