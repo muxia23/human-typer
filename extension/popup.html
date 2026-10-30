@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <textarea id="text" rows="8" placeholder="粘贴要输入的文本"></textarea>
+    <label>速度 <output id="wpmValue"></output> WPM
+      <input id="wpm" type="range" min="20" max="150" step="5" />
+    </label>
+    <label>出错率 <output id="errorValue"></output>%
+      <input id="error" type="range" min="0" max="15" step="1" />
+    </label>
+    <label>停顿强度 <output id="pauseValue"></output>
+      <input id="pause" type="range" min="0" max="2" step="0.5" />
+    </label>
+    <div class="actions">
+      <button id="start">开始</button>
+      <button id="cancel">取消</button>
+    </div>
+    <p id="status" role="status"></p>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
