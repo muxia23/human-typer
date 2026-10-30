@@ -58,7 +58,7 @@ final class SystemEnvironment: TypingEnvironment {
     }
 
     func secondsSinceUserInput() -> Double {
-        let types: [CGEventType] = [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
+        let types: [CGEventType] = [.keyDown, .flagsChanged, .leftMouseDown, .rightMouseDown, .otherMouseDown]
         return types
             .map { CGEventSource.secondsSinceLastEventType(.hidSystemState, eventType: $0) }
             .min() ?? .infinity

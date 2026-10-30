@@ -41,8 +41,24 @@ protocol TypingEnvironment {
     func now() -> Double
 }
 
+// JSONSerialization 把布尔值也解析成 NSNumber，as? Int 会把 true 当作 1
+private func jsonInt(_ raw: Any?) -> Int? {
+    guard let number = raw as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() else {
+        return nil
+    }
+    return raw as? Int
+}
+
 private func parseAction(_ raw: Any) throws -> Action {
     guard let object = raw as? [String: Any], let type = object["type"] as? String else {
+        throw ProtocolError.unsupported
+    }
+    let allowedFields: [String: Set<String>] = [
+        "text": ["type", "value"],
+        "wait": ["type", "ms"],
+        "key": ["type", "key", "modifiers"],
+    ]
+    guard let allowed = allowedFields[type], Set(object.keys) == allowed else {
         throw ProtocolError.unsupported
     }
     switch type {
@@ -52,7 +68,7 @@ private func parseAction(_ raw: Any) throws -> Action {
         }
         return .text(value)
     case "wait":
-        guard let ms = object["ms"] as? Int, ms >= 0 else {
+        guard let ms = jsonInt(object["ms"]), ms >= 0 else {
             throw ProtocolError.unsupported
         }
         return .wait(ms)
@@ -69,7 +85,7 @@ private func parseAction(_ raw: Any) throws -> Action {
 
 func parseCommand(_ data: Data) throws -> Command {
     guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-          object["v"] as? Int == 1,
+          jsonInt(object["v"]) == 1,
           let cmd = object["cmd"] as? String else {
         throw ProtocolError.unsupported
     }
@@ -77,7 +93,7 @@ func parseCommand(_ data: Data) throws -> Command {
     case "cancel":
         return .cancel
     case "start":
-        guard let startDelayMs = object["startDelayMs"] as? Int, startDelayMs >= 0,
+        guard let startDelayMs = jsonInt(object["startDelayMs"]), startDelayMs >= 0,
               let rawActions = object["actions"] as? [Any] else {
             throw ProtocolError.unsupported
         }
@@ -117,16 +133,22 @@ private func readExactly(_ handle: FileHandle, count: Int) -> Data? {
 private let sliceMs = 20
 
 func runTyping(_ command: StartCommand, env: TypingEnvironment) -> RunResult {
-    var remaining = command.startDelayMs
-    while remaining > 0 {
-        if env.cancelled { return .stopped(.userCancel) }
-        let slice = min(sliceMs, remaining)
-        env.sleep(ms: slice)
-        remaining -= slice
+    func sleepSlice(until deadline: Double) {
+        let remaining = Int(((deadline - env.now()) * 1000).rounded(.up))
+        env.sleep(ms: min(sliceMs, remaining))
     }
 
-    let targetPID = env.frontmostPID()
+    let typingStart = env.now() + Double(command.startDelayMs) / 1000
+    while env.now() < typingStart {
+        if env.cancelled { return .stopped(.userCancel) }
+        sleepSlice(until: typingStart)
+    }
+    if env.cancelled { return .stopped(.userCancel) }
+
+    guard let targetPID = env.frontmostPID() else { return .stopped(.appSwitched) }
     let startedAt = env.now()
+    // 按绝对时间排程，单次睡眠超时不会累积
+    var deadline = startedAt
 
     func stopReason() -> StopReason? {
         if env.cancelled { return .userCancel }
@@ -143,14 +165,12 @@ func runTyping(_ command: StartCommand, env: TypingEnvironment) -> RunResult {
         case .backspace:
             env.sendBackspace()
         case .wait(let ms):
-            var left = ms
-            while left > 0 {
-                let slice = min(sliceMs, left)
-                env.sleep(ms: slice)
-                left -= slice
+            deadline += Double(ms) / 1000
+            while env.now() < deadline {
+                sleepSlice(until: deadline)
                 if let reason = stopReason() { return .stopped(reason) }
             }
         }
     }
-    return stopReason().map(RunResult.stopped) ?? .done
+    return .done
 }

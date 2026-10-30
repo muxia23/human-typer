@@ -14,9 +14,10 @@ func check(_ condition: Bool, _ name: String) {
 final class FakeEnvironment: TypingEnvironment {
     var clock = 0.0
     var log: [String] = []
-    var front: Int32 = 1
+    var front: Int32? = 1
     var lastInputAt = -100.0
     var cancelled = false
+    var overshootMs = 0
     var hooks: [Int: (FakeEnvironment) -> Void] = [:]
 
     func sendText(_ value: String) {
@@ -27,7 +28,7 @@ final class FakeEnvironment: TypingEnvironment {
         log.append("backspace")
         hooks[log.count]?(self)
     }
-    func sleep(ms: Int) { clock += Double(ms) / 1000 }
+    func sleep(ms: Int) { clock += Double(ms + overshootMs) / 1000 }
     func frontmostPID() -> Int32? { front }
     func secondsSinceUserInput() -> Double { clock - lastInputAt }
     func now() -> Double { clock }
@@ -51,6 +52,9 @@ let invalid = [
     #"{"v":1,"cmd":"start","startDelayMs":0,"actions":[{"type":"style","value":"bold"}]}"#,
     #"{"v":1,"cmd":"start","startDelayMs":0,"actions":[{"type":"key","key":"b","modifiers":["cmd"]}]}"#,
     #"{"v":1,"cmd":"start","startDelayMs":0,"actions":[{"type":"key","key":"backspace","modifiers":["cmd"]}]}"#,
+    #"{"v":1,"cmd":"start","startDelayMs":0,"actions":[{"type":"text","value":"a","style":"bold"}]}"#,
+    #"{"v":1,"cmd":"start","startDelayMs":0,"actions":[{"type":"wait","ms":true}]}"#,
+    #"{"v":true,"cmd":"cancel"}"#,
     "not json",
 ]
 for json in invalid {
@@ -102,6 +106,24 @@ do {
     env.cancelled = true
     check(runTyping(command, env: env) == .stopped(.userCancel), "倒计时内取消")
     check(env.log.isEmpty, "倒计时内取消时不发送按键")
+}
+do {
+    let env = FakeEnvironment()
+    env.overshootMs = 5
+    let waits = StartCommand(startDelayMs: 0, actions: Array(repeating: .wait(20), count: 50))
+    check(runTyping(waits, env: env) == .done, "睡眠超时时仍能完成")
+    check(env.clock < 1.02, "睡眠超时不会累积拉长总时长")
+}
+do {
+    let env = FakeEnvironment()
+    env.front = nil
+    check(runTyping(command, env: env) == .stopped(.appSwitched), "读不到前台应用时不打字")
+    check(env.log.isEmpty, "读不到前台应用时不发送按键")
+}
+do {
+    let env = FakeEnvironment()
+    env.hooks[4] = { $0.lastInputAt = $0.clock + 0.01 }
+    check(runTyping(command, env: env) == .done, "全部发送后才有操作时仍算完成")
 }
 
 if failures > 0 {

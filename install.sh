@@ -12,7 +12,10 @@ codesign --force --sign - --identifier "$HOST_NAME" "$BINARY"
 
 register() {
   local browser_dir="$1"
-  [ -d "$browser_dir" ] || return 0
+  if [ ! -d "$browser_dir" ]; then
+    echo "skipped (not installed): $browser_dir"
+    return 0
+  fi
   mkdir -p "$browser_dir/NativeMessagingHosts"
   cat > "$browser_dir/NativeMessagingHosts/$HOST_NAME.json" <<EOF
 {
