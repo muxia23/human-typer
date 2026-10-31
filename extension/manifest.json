@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Human Typer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "以接近真人的节奏输入文本，用于演示和录屏。",
   "permissions": [
     "nativeMessaging",

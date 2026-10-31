@@ -11,9 +11,9 @@ const REASON_TEXT = {
   user_cancel: '已取消。点继续后，5 秒内把光标放回原位。',
 };
 const ERROR_TEXT = {
-  no_accessibility_permission: '缺少权限：请在系统设置的“辅助功能”中允许后重试。',
-  host_unavailable: '无法连接本地程序：请运行 install.sh 后重试。',
-  unsupported_protocol: '本地程序版本不匹配：请重新运行 install.sh。',
+  no_accessibility_permission: '缺少权限：请在系统设置的“辅助功能”中允许 human-typer-host，然后点继续。',
+  host_unavailable: '无法连接本地程序：请按 README 运行安装命令后重试。',
+  unsupported_protocol: '本地程序版本不匹配：请重新运行安装命令。',
 };
 
 function renderStatus(status) {

@@ -15,11 +15,22 @@
 
 ## 安装
 
-需要 macOS、Chrome 或 Arc，以及 Xcode Command Line Tools。
+需要 macOS 12 或以上，以及 Chrome 或 Arc。不需要安装开发工具。在终端运行：
 
-1. 运行 `./install.sh`，编译本地程序并注册到浏览器。
-2. 打开 `chrome://extensions`，开启开发者模式，点“加载已解压的扩展程序”，选择 `extension` 目录。
-3. 在“系统设置 → 隐私与安全性 → 辅助功能”中允许 `build/human-typer-host`。重新编译后需要删除并重新添加。
+```bash
+curl -fsSL https://github.com/muxia23/human-typer/releases/latest/download/install.sh | bash
+```
+
+然后完成两步：
+
+1. 在打开的 `chrome://extensions` 页面开启开发者模式，把 Finder 中选中的 `extension` 文件夹拖进去，或点“加载已解压的扩展程序”选择它。
+2. 第一次点开始时，按系统提示在“辅助功能”中允许 `human-typer-host`，然后再点一次开始。
+
+程序安装在 `~/HumanTyper`。卸载运行 `bash ~/HumanTyper/uninstall.sh`。
+
+### 从源码安装
+
+需要 Xcode Command Line Tools。运行 `./install.sh`，加载 `extension` 目录，并在“辅助功能”中允许 `build/human-typer-host`。重新编译后需要删除并重新添加。
 
 ## 使用
 
